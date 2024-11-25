@@ -1,9 +1,25 @@
 public class Enemy : Person
 {
+    private bool Alive = true;
     public Enemy(int x, int y) : base(x, y) { }
 
-    public override string ToString()
+    public void Kill()
     {
-        return "x";
+        Alive = false;
     }
+
+    public bool IsAlive()
+    {
+        return Alive;
+    }
+
+    new public bool Move(Node playerLocation)
+    {
+        while (!base.Move(playerLocation))
+        {
+            Rotate();
+        }
+        return true;
+    }
+
 }

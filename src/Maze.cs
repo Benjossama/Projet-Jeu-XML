@@ -9,9 +9,9 @@ public class Maze
 
     public Maze(int height, int width)
     {
-        this.width = width;
         this.height = height;
-        Grid = new Node[width, height];
+        this.width = width;
+        Grid = new Node[height, width];
         // Initalizing all the nodes
         for (int x = 0; x < height; x++)
         {
