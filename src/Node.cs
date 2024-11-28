@@ -12,6 +12,7 @@ public class Node
     private int x;
     private int y;
     private Dictionary<Wall, bool> walls = new Dictionary<Wall, bool>();
+    //Useful for generating the maze, that's all, need not be serialized
     private bool visited = false;
 
     public Node()

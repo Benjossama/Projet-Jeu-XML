@@ -1,3 +1,4 @@
+using System.Formats.Asn1;
 using System.Net.Security;
 
 public class Maze
@@ -114,6 +115,43 @@ public class Maze
             a.setWall(Wall.RIGHT, false);
             b.setWall(Wall.LEFT, false);
         }
-
     }
+
+    public bool NodeAVisibleFromB(Node a, Node b)
+    {
+        if (a.getX() == b.getX() && a.getY() == b.getY())
+            return true;
+
+        else if (a.getX() == b.getX())
+            return IsPathClear(a.getX(), a.getY(), b.getY(), true);
+
+        else if (a.getY() == b.getY())
+            return IsPathClear(a.getY(), a.getX(), b.getX(), false);
+
+        else
+            return false;
+    }
+
+    private bool IsPathClear(int fixedCoordinate, int first, int second, bool isVertical)
+    {
+        int min = Math.Min(first, second);
+        int max = Math.Max(first, second);
+        bool ClearPath = true;
+        for (int i = min; i <= max; i++)
+        {
+            var node = isVertical ? getNode(fixedCoordinate, i) : getNode(i, fixedCoordinate);
+
+            if ((i == min && (isVertical ? node.GetRightWall() : node.GetBottomWall())) ||
+                (i == max && (isVertical ? node.GetLeftWall() : node.GetTopWall())) ||
+                (i > min && i < max &&
+                 ((isVertical ? node.GetLeftWall() || node.GetRightWall()
+                              : node.GetTopWall() || node.GetBottomWall()))))
+            {
+                ClearPath = false;
+            }
+        }
+
+        return ClearPath;
+    }
+
 }

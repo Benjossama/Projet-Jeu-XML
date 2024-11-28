@@ -1,12 +1,8 @@
-using System.ComponentModel.DataAnnotations;
-using System.IO.Compression;
-using System.Security.Cryptography.X509Certificates;
-
 public class Game
 {
     Maze maze;
-    Player player = new Player(1, 2);
-    Enemy[] enemies = new Enemy[3];
+    Player player = new Player(0, 0);
+    Enemy[] enemies = new Enemy[2];
 
     public Game(int width, int height)
     {
@@ -18,51 +14,41 @@ public class Game
         }
     }
 
-    private bool Winner()
-    {
-        // A player wins if he is in the most south-east node, and all enemiers are dead
-        bool foundAliveEnemy = false;
-        int i = 0;
-        while (i < enemies.Length && !foundAliveEnemy)
-        {
-            if (enemies[i].IsAlive())
-            {
-                foundAliveEnemy = true;
-            }
-            i++;
-        }
-        bool isInLastNode = (player.getX() == maze.getHeight() - 1) && (player.getY() == maze.getWidth() - 1);
-
-        return !foundAliveEnemy && isInLastNode;
-    }
-
     public async void Run()
     {
         bool GameOver = false;
 
+        // The code below in a function that runs asynchronously, it modifies the GameOver varibale
+        // in other words it checks if the game is over or not, it checks every 10ms, it is important
+        // so that we wouldn't have lags in the game
         _ = Task.Run(async () =>
        {
            while (!GameOver)
            {
-
                GameOver = Winner() || PlayerDetected();
-               await Task.Delay(50);
+               if (AllEnemiesKilled())
+                   maze.getNode(maze.getHeight() - 1, maze.getWidth() - 1).setWall(Wall.BOTTOM, false);
+               PrintGrid();
+               await Task.Delay(10);
            }
+
+           PrintGrid();
+
        });
-        // Tâche pour déplacer les ennemis périodiquement
+
+        // This function is responsible for moving the enemies, regardless of the position
+        // of the player or what he is doing, the enemies will move one spot every 500ms
         _ = Task.Run(async () =>
         {
-            long milliseconds = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             while (!GameOver)
             {
 
                 foreach (var enemy in enemies)
                 {
+                    if (!enemy.IsAlive())
+                        continue;
                     enemy.Move(maze.getNode(enemy.getX(), enemy.getY()));
                 }
-                PrintGrid();
-                milliseconds = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-
                 await Task.Delay(500);
             }
         });
@@ -70,7 +56,6 @@ public class Game
         // Boucle principale
         while (!GameOver)
         {
-            PrintGrid();
             char input = Console.ReadKey().KeyChar;
             switch (input)
             {
@@ -98,107 +83,138 @@ public class Game
                     break;
             }
 
-            if (!char.IsLower(input))
+            if (!char.IsLower(input) && input != 'P')
             {
                 player.Move(maze.getNode(player.getX(), player.getY()));
             }
         }
-        PrintGrid();
 
+        if (Winner())
+        {
+            Console.WriteLine("You won!");
+        }
+        else
+        {
+            Console.WriteLine("You died!");
+        }
     }
 
     private void Shoot()
     {
         foreach (var enemy in enemies)
         {
-            if (player.getX() == enemy.getX() && !isHorizontalWallBetweenNodes(player.getX(), player.getY(), enemy.getY()))
-            {
-                enemy.Kill();
-
-            }
-            else if (player.getY() == enemy.getY() && !isVerticalWallBetweenNodes(player.getY(), player.getX(), enemy.getX()))
+            Node PlayerNode = maze.getNode(player.getX(), player.getY());
+            Node EnemyNode = maze.getNode(enemy.getX(), enemy.getY());
+            if (maze.NodeAVisibleFromB(PlayerNode, EnemyNode) && ACorrectlyOrientedTowardsB(player, enemy))
             {
                 enemy.Kill();
             }
-
         }
 
     }
 
+    private bool Winner()
+    {
+        bool isInLastNode = (player.getX() == maze.getHeight() - 1) && (player.getY() == maze.getWidth() - 1);
+        return isInLastNode && AllEnemiesKilled();
+    }
+
+    private bool AllEnemiesKilled()
+    {
+        bool foundAliveEnemy = false;
+        int i = 0;
+        while (i < enemies.Length && !foundAliveEnemy)
+        {
+            if (enemies[i].IsAlive())
+            {
+                foundAliveEnemy = true;
+            }
+            i++;
+        }
+        return !foundAliveEnemy;
+    }
     private bool PlayerDetected()
     {
-        return false;
-    }
-
-    private bool isHorizontalWallBetweenNodes(int x, int y1, int y2)
-    {
-        bool foundWall = false;
-        int start = Math.Min(y1, y2);
-        int end = Math.Max(y1, y2);
-        // Does the first node have a right wall, or the second node have a left wall, if yes, return true
-        if (maze.getNode(x, start).GetRightWall() || maze.getNode(x, end).GetLeftWall())
-            return true;
-
-        // We search for the nodes in between that have right or left wall
-        int i = start + 1;
-        while (!(i == end) && !foundWall)
+        bool detected = false;
+        foreach (var enemy in enemies)
         {
+            Node playerNode = maze.getNode(player.getX(), player.getY());
+            Node enemyNode = maze.getNode(enemy.getX(), enemy.getY());
 
-            foundWall = maze.getNode(x, i).GetRightWall() || maze.getNode(x, i).GetLeftWall();
-            i++;
+            // Vérifie si le joueur est dans la ligne de vue de l'ennemi
+            if (
+                    ACorrectlyOrientedTowardsB(enemy, player) && // Enemy is facing the direction
+                                                                 // on which the player is found
+                    maze.NodeAVisibleFromB(playerNode, enemyNode) && // No wall between enemy and player
+                    enemy.IsAlive()
+                )
+            {
+                detected = true;
+            }
         }
 
-        return foundWall;
+        return detected; // Aucun ennemi n'a détecté le joueur
     }
 
-    private bool isVerticalWallBetweenNodes(int y, int x1, int x2)
+    private bool ACorrectlyOrientedTowardsB(Person A, Person B)
     {
-        bool foundWall = false;
-        int start = Math.Min(x1, x2);
-        int end = Math.Max(x1, x2);
-
-        // Does the first node have a right wall, or the second node have a left wall, if yes, return true
-        if (maze.getNode(start, y).GetBottomWall() || maze.getNode(end, y).GetTopWall())
-            return true;
-
-        // We search for the nodes in between that have right or left wall
-        int i = start + 1;
-        while (!(i == end) && !foundWall)
+        return A.getOrientation() switch
         {
-            foundWall = maze.getNode(i, y).GetBottomWall() || maze.getNode(i, y).GetTopWall();
-            i++;
-        }
-
-        return foundWall;
+            Orientation.NORTH => A.getY() == B.getY() && B.getX() <= A.getX(),
+            Orientation.SOUTH => A.getY() == B.getY() && B.getX() >= A.getX(),
+            Orientation.EAST => A.getX() == B.getX() && B.getY() >= A.getY(),
+            Orientation.WEST => A.getX() == B.getX() && B.getY() <= A.getY(),
+            _ => false
+        };
     }
+
+
     public void PrintGrid()
     {
         Console.Clear();
+
+        // Affichage de la ligne supérieure des indices Y
+        Console.Write("    "); // Espacement pour aligner avec les indices X
+        for (int y = 0; y < maze.getWidth(); y++)
+        {
+            Console.Write($" {y,3}"); // Espacement formaté
+        }
+        Console.WriteLine();
+
         for (int x = 0; x < maze.getHeight(); x++)
         {
+            // Ligne horizontale supérieure avec les murs
+            Console.Write("    "); // Espacement pour aligner avec les indices X
             for (int y = 0; y < maze.getWidth(); y++)
             {
                 Console.Write(maze.getNode(x, y).GetTopWall() ? "+---" : "+   ");
             }
             Console.WriteLine("+");
 
+            // Ligne de contenu (joueurs, ennemis, espaces) avec l'indice vertical
             for (int y = 0; y < maze.getWidth(); y++)
             {
+                if (y == 0) // Affichage de l'indice vertical sur la première colonne
+                {
+                    Console.Write($" {x,2} "); // Affichage de l'indice vertical
+                }
+
                 if (player.getX() == x && player.getY() == y)
                     Console.Write(maze.getNode(x, y).GetLeftWall() ? "| {0} " : "  {0} ", player);
-                else if (ennemyHere(x, y) > -1)
+                else if (EnnemyHere(x, y) > -1)
                 {
+                    string EnemyForm = enemies[EnnemyHere(x, y)].IsAlive() ? enemies[EnnemyHere(x, y)].ToString() : ".";
                     if (maze.getNode(x, y).GetLeftWall())
                     {
                         Console.Write("|");
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.Write(" {0} ", enemies[ennemyHere(x, y)]);
+                        Console.Write($" {EnemyForm,1} ");
                         Console.ForegroundColor = ConsoleColor.White;
                     }
                     else
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.Write("  {0} ", enemies[ennemyHere(x, y)]);
+                        Console.Write($"  {EnemyForm,1} ");
                         Console.ForegroundColor = ConsoleColor.White;
                     }
                 }
@@ -208,20 +224,19 @@ public class Game
             Console.WriteLine("|");
         }
 
+        // Dernière ligne horizontale
+        Console.Write("    "); // Espacement pour aligner avec les indices X
         for (int y = 0; y < maze.getWidth(); y++)
         {
             Console.Write(maze.getNode(maze.getHeight() - 1, y).GetBottomWall() ? "+---" : "+   ");
         }
         Console.WriteLine("+");
-
     }
 
-    private int ennemyHere(int x, int y)
+    private int EnnemyHere(int x, int y)
     {
         for (int i = 0; i < enemies.Length; i++)
         {
-            if (!enemies[i].IsAlive())
-                continue;
             if (enemies[i].getX() == x && enemies[i].getY() == y)
             {
                 return i; // Retourne l'indice de l'ennemi trouvé
