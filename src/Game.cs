@@ -1,94 +1,93 @@
+using System.Diagnostics;
+using System.Net;
+using Microsoft.VisualBasic;
+
 public class Game
 {
-    Maze maze;
-    Player player = new Player(0, 0);
-    Enemy[] enemies = new Enemy[2];
+    volatile Maze maze;
+    volatile Player player = new Player(0, 0);
+    volatile Enemy[] enemies;
+    private volatile bool GameOver = false;
 
-    public Game(int width, int height)
+
+
+    public Game(int width, int height, int NbEnemies)
     {
         maze = new Maze(height, width);
+        enemies = new Enemy[NbEnemies];
+
         Random randomNumberGenerator = new Random();
         for (int i = 0; i < enemies.Length; i++)
         {
             enemies[i] = new Enemy(randomNumberGenerator.Next(height / 3, height), randomNumberGenerator.Next(width / 3, width));
+            // enemies[i] = new Enemy((height - 1), (width - 1));
+        }
+
+        // maze.getNode(0, 0).setWall(Wall.RIGHT, false);
+        // for (int i = 1; i < width - 1; i++)
+        // {
+        //     maze.getNode(0, i).setWall(Wall.RIGHT, false);
+        //     maze.getNode(0, i).setWall(Wall.LEFT, false);
+        //     maze.getNode(i, 0).setWall(Wall.TOP, false);
+        //     maze.getNode(i, 0).setWall(Wall.BOTTOM, false);
+        // }
+
+        Update();
+        Show();
+        Run();
+    }
+
+    public async void Update()
+    {
+        while (!GameOver)
+        {
+            if (Winner() || PlayerDetected())
+            {
+                GameOver = true;
+            }
+            else
+            {
+                MoveEnemies();
+                await Task.Delay(250);
+            }
         }
     }
 
-    public async void Run()
+    private async void Show()
     {
-        bool GameOver = false;
-
-        // The code below in a function that runs asynchronously, it modifies the GameOver varibale
-        // in other words it checks if the game is over or not, it checks every 10ms, it is important
-        // so that we wouldn't have lags in the game
-        _ = Task.Run(async () =>
-       {
-           while (!GameOver)
-           {
-               GameOver = Winner() || PlayerDetected();
-               if (AllEnemiesKilled())
-                   maze.getNode(maze.getHeight() - 1, maze.getWidth() - 1).setWall(Wall.BOTTOM, false);
-               PrintGrid();
-               await Task.Delay(10);
-           }
-
-           PrintGrid();
-
-       });
-
-        // This function is responsible for moving the enemies, regardless of the position
-        // of the player or what he is doing, the enemies will move one spot every 500ms
-        _ = Task.Run(async () =>
+        while (!GameOver)
         {
-            while (!GameOver)
-            {
+            PrintGrid();
+            await Task.Delay(50);
+        }
+    }
 
-                foreach (var enemy in enemies)
-                {
-                    if (!enemy.IsAlive())
-                        continue;
-                    enemy.Move(maze.getNode(enemy.getX(), enemy.getY()));
-                }
-                await Task.Delay(500);
-            }
-        });
-
+    public void Run()
+    {
         // Boucle principale
         while (!GameOver)
         {
-            char input = Console.ReadKey().KeyChar;
-            switch (input)
-            {
-                case 'w':
-                case 'W':
-                    player.setOrientation(Orientation.NORTH);
-                    break;
-                case 'd':
-                case 'D':
-                    player.setOrientation(Orientation.EAST);
-                    break;
-                case 's':
-                case 'S':
-                    player.setOrientation(Orientation.SOUTH);
-                    break;
-                case 'a':
-                case 'A':
-                    player.setOrientation(Orientation.WEST);
-                    break;
-                case 'P':
-                case 'p':
-                    Shoot();
-                    break;
-                default:
-                    break;
-            }
-
-            if (!char.IsLower(input) && input != 'P')
-            {
-                player.Move(maze.getNode(player.getX(), player.getY()));
-            }
+            HandlePlayerInput();
         }
+        // When game is over, it has to be handled
+        HandleEndOfGame();
+    }
 
+
+    private void MoveEnemies()
+    {
+        foreach (var enemy in enemies)
+        {
+            if (!enemy.IsAlive())
+                continue;
+            enemy.Move(maze.getNode(enemy.getX(), enemy.getY()));
+        }
+    }
+
+    // Existence questionable, has to be improved, may even be removed later
+    private void HandleEndOfGame()
+    {
+        PrintGrid();
         if (Winner())
         {
             Console.WriteLine("You won!");
@@ -99,6 +98,42 @@ public class Game
         }
     }
 
+    private void HandlePlayerInput()
+    {
+        char input = Console.ReadKey().KeyChar;
+        bool CanMove = true;
+        switch (input)
+        {
+            case 'w':
+            case 'W':
+                player.setOrientation(Orientation.NORTH);
+                break;
+            case 'd':
+            case 'D':
+                player.setOrientation(Orientation.EAST);
+                break;
+            case 's':
+            case 'S':
+                player.setOrientation(Orientation.SOUTH);
+                break;
+            case 'a':
+            case 'A':
+                player.setOrientation(Orientation.WEST);
+                break;
+            case 'P':
+            case 'p':
+                Shoot();
+                break;
+            default:
+                CanMove = false;
+                break;
+        }
+
+        if (!char.IsLower(input) && CanMove)
+        {
+            player.Move(maze.getNode(player.getX(), player.getY()));
+        }
+    }
     private void Shoot()
     {
         foreach (var enemy in enemies)
@@ -108,6 +143,8 @@ public class Game
             if (maze.NodeAVisibleFromB(PlayerNode, EnemyNode) && ACorrectlyOrientedTowardsB(player, enemy))
             {
                 enemy.Kill();
+                // System.Media.SoundPlayer player = new System.Media.SoundPlayer(@"c:\mywavfile.wav");
+                // player.Play();
             }
         }
 
@@ -115,7 +152,7 @@ public class Game
 
     private bool Winner()
     {
-        bool isInLastNode = (player.getX() == maze.getHeight() - 1) && (player.getY() == maze.getWidth() - 1);
+        bool isInLastNode = (player.getX() == maze.getHeight() - 1) && (player.getY() == maze.getWidth() - 1) && player.GetOrientation() == Orientation.SOUTH;
         return isInLastNode && AllEnemiesKilled();
     }
 
@@ -155,10 +192,9 @@ public class Game
 
         return detected; // Aucun ennemi n'a détecté le joueur
     }
-
     private bool ACorrectlyOrientedTowardsB(Person A, Person B)
     {
-        return A.getOrientation() switch
+        return A.GetOrientation() switch
         {
             Orientation.NORTH => A.getY() == B.getY() && B.getX() <= A.getX(),
             Orientation.SOUTH => A.getY() == B.getY() && B.getX() >= A.getX(),
@@ -167,8 +203,6 @@ public class Game
             _ => false
         };
     }
-
-
     public void PrintGrid()
     {
         Console.Clear();
@@ -194,16 +228,20 @@ public class Game
             // Ligne de contenu (joueurs, ennemis, espaces) avec l'indice vertical
             for (int y = 0; y < maze.getWidth(); y++)
             {
+                int enemyhere = FoundEnnemy(x, y);
+                string EnemyForm = "";
+                if (enemyhere > -1)
+                    EnemyForm = enemies[FoundEnnemy(x, y)].IsAlive() ? enemies[FoundEnnemy(x, y)].ToString() : ".";
+
                 if (y == 0) // Affichage de l'indice vertical sur la première colonne
                 {
                     Console.Write($" {x,2} "); // Affichage de l'indice vertical
                 }
-
                 if (player.getX() == x && player.getY() == y)
                     Console.Write(maze.getNode(x, y).GetLeftWall() ? "| {0} " : "  {0} ", player);
-                else if (EnnemyHere(x, y) > -1)
+                else if (enemyhere > -1)
                 {
-                    string EnemyForm = enemies[EnnemyHere(x, y)].IsAlive() ? enemies[EnnemyHere(x, y)].ToString() : ".";
+                    // Console.Write("\n the value is {0} {1}\n", FoundEnnemy(x, y), enemies.Length);
                     if (maze.getNode(x, y).GetLeftWall())
                     {
                         Console.Write("|");
@@ -233,7 +271,7 @@ public class Game
         Console.WriteLine("+");
     }
 
-    private int EnnemyHere(int x, int y)
+    private int FoundEnnemy(int x, int y)
     {
         for (int i = 0; i < enemies.Length; i++)
         {
@@ -244,6 +282,4 @@ public class Game
         }
         return -1; // Aucun ennemi trouvé
     }
-
-
 }

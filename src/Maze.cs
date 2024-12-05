@@ -1,3 +1,4 @@
+using System.Dynamic;
 using System.Formats.Asn1;
 using System.Net.Security;
 
@@ -7,6 +8,7 @@ public class Maze
     private int height;
     private Node[,] Grid;
     Random randomNumberGenerator = new Random();
+    HashSet<Node> VisitedNodes = new HashSet<Node>();
 
     public Maze(int height, int width)
     {
@@ -55,7 +57,7 @@ public class Maze
             int newX = x + dx;
             int newY = y + dy;
 
-            if (newX >= 0 && newY >= 0 && newX < height && newY < width && !Grid[newX, newY].isVisited())
+            if (newX >= 0 && newY >= 0 && newX < height && newY < width && !VisitedNodes.Contains(Grid[newX, newY]))
             {
                 neighbors.Add(Grid[newX, newY]);
             }
@@ -68,7 +70,7 @@ public class Maze
     void generate()
     {
         Stack<Node> stack = new Stack<Node>();
-        Grid[0, 0].setAsVisited();
+        VisitedNodes.Add(Grid[0, 0]);
         stack.Push(Grid[0, 0]);
 
         while (stack.Count > 0)
@@ -80,7 +82,7 @@ public class Maze
                 stack.Push(current);
                 Node neighbor = neighbors[randomNumberGenerator.Next(neighbors.Count)];
                 removeWall(current, neighbor);
-                neighbor.setAsVisited();
+                VisitedNodes.Add(neighbor);
                 stack.Push(neighbor);
             }
 

@@ -9,7 +9,7 @@ abstract public class Person
 {
     private int x;
     private int y;
-    private Orientation orientation;
+    protected Orientation orientation;
     public Person(int x, int y)
     {
         this.x = x;
@@ -33,7 +33,7 @@ abstract public class Person
     {
         this.y = y;
     }
-    public Orientation getOrientation()
+    public Orientation GetOrientation()
     {
         return orientation;
     }
@@ -42,36 +42,39 @@ abstract public class Person
         this.orientation = orientation;
     }
 
-    public void Rotate()
+    protected Orientation NextOrientation(Orientation orientation)
     {
-        Orientation[] values = (Orientation[])Enum.GetValues(typeof(Orientation));
-        int nextIndex = ((int)orientation + new Random().Next(100)) % values.Length;
-
-        this.orientation = values[nextIndex];
+        return orientation == Orientation.WEST ? Orientation.NORTH : orientation + 1;
     }
+
+    protected Orientation PreviousOrientation(Orientation orientation)
+    {
+        return orientation == Orientation.NORTH ? Orientation.WEST : orientation - 1;
+    }
+
 
     public bool Move(Node playerLocation)
     {
         // Check if the current cell has a wall in the side facing the orientation of the person
-        if (getOrientation() == Orientation.NORTH && !playerLocation.GetTopWall())
+        if (GetOrientation() == Orientation.NORTH && !playerLocation.GetTopWall())
         {
             setX(getX() - 1);
             return true;
 
         }
-        else if (getOrientation() == Orientation.EAST && !playerLocation.GetRightWall())
+        else if (GetOrientation() == Orientation.EAST && !playerLocation.GetRightWall())
         {
             setY(getY() + 1);
             return true;
 
         }
-        else if (getOrientation() == Orientation.SOUTH && !playerLocation.GetBottomWall())
+        else if (GetOrientation() == Orientation.SOUTH && !playerLocation.GetBottomWall())
         {
             setX(getX() + 1);
             return true;
 
         }
-        else if (getOrientation() == Orientation.WEST && !playerLocation.GetLeftWall())
+        else if (GetOrientation() == Orientation.WEST && !playerLocation.GetLeftWall())
         {
             setY(getY() - 1);
             return true;
@@ -83,7 +86,7 @@ abstract public class Person
     public override string ToString()
     {
         String p = ">";
-        switch (getOrientation())
+        switch (GetOrientation())
         {
             case Orientation.NORTH:
                 p = "ʌ";

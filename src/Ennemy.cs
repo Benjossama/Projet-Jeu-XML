@@ -15,11 +15,11 @@ public class Enemy : Person
 
     new public bool Move(Node playerLocation)
     {
+        orientation = PreviousOrientation(orientation);
         while (!base.Move(playerLocation))
         {
-            Rotate();
+            orientation = NextOrientation(orientation);
         }
         return true;
     }
-
 }
