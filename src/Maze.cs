@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Dynamic;
 using System.Formats.Asn1;
 using System.Net.Security;
@@ -72,9 +73,14 @@ public class Maze
         Stack<Node> stack = new Stack<Node>();
         VisitedNodes.Add(Grid[0, 0]);
         stack.Push(Grid[0, 0]);
-
+        int counter = 1;
         while (stack.Count > 0)
         {
+
+            Engine.Print(this, null, null, "Loading" + new string('.', counter));
+            counter = counter == 3 ? 1 : counter + 1;
+            Task.Delay(20).Wait();
+
             Node current = stack.Pop();
             List<Node> neighbors = getNeighbors(current);
             if (neighbors.Count > 0)
