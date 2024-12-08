@@ -73,13 +73,11 @@ public class Maze
         Stack<Node> stack = new Stack<Node>();
         VisitedNodes.Add(Grid[0, 0]);
         stack.Push(Grid[0, 0]);
-        int counter = 1;
         while (stack.Count > 0)
         {
 
-            Engine.Print(this, null, null, "Loading" + new string('.', counter));
-            counter = counter == 3 ? 1 : counter + 1;
-            Task.Delay(20).Wait();
+            Engine.Print(this, null, null, "Loading...");
+            Task.Delay(25).Wait();
 
             Node current = stack.Pop();
             List<Node> neighbors = getNeighbors(current);
