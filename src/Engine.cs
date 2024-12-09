@@ -6,24 +6,24 @@ class Engine
         Console.Clear();
         Console.WriteLine(text);
 
-        int width = maze.getWidth();
-        int height = maze.getHeight();
+        int width = maze.Width;
+        int height = maze.Height;
 
         for (int x = 0; x < height; x++)
         {
             for (int y = 0; y < width; y++)
             {
-                Console.Write(maze.getNode(x, y).GetTopWall() ? "+---" : "+   ");
+                Console.Write(maze.GetNode(x, y).TOP ? "+---" : "+   ");
             }
             Console.WriteLine("+");
 
             for (int y = 0; y < width; y++)
             {
-                bool hasLeftWall = maze.getNode(x, y).GetLeftWall();
+                bool hasLeftWall = maze.GetNode(x, y).LEFT;
                 string nodeContent = "   ";
                 bool nodeContentIsEnemy = false;
 
-                if (player != null && player.getX() == x && player.getY() == y)
+                if (player != null && player.X == x && player.Y == y)
                 {
                     nodeContent = $" {player} ";
                 }
@@ -33,7 +33,7 @@ class Engine
                     if (enemyIndex > -1)
                     {
                         Enemy enemy = enemies[enemyIndex];
-                        nodeContent = enemy.IsAlive() ? $" {enemy} " : " . ";
+                        nodeContent = enemy.Alive ? $" {enemy} " : " . ";
                         nodeContentIsEnemy = true;
                     }
                 }
@@ -49,7 +49,7 @@ class Engine
         // Affichage de la dernière ligne horizontale
         for (int y = 0; y < width; y++)
         {
-            Console.Write(maze.getNode(height - 1, y).GetBottomWall() ? "+---" : "+   ");
+            Console.Write(maze.GetNode(height - 1, y).BOTTOM ? "+---" : "+   ");
         }
         Console.WriteLine("+");
     }
@@ -59,7 +59,7 @@ class Engine
     {
         for (int i = 0; i < enemies.Length; i++)
         {
-            if (enemies[i].getX() == x && enemies[i].getY() == y)
+            if (enemies[i].X == x && enemies[i].Y == y)
             {
                 return i; // Retourne l'indice de l'ennemi trouvé
             }

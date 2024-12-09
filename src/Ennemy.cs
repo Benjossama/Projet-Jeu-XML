@@ -1,24 +1,33 @@
+using System.Xml.Serialization;
+
+[Serializable]
 public class Enemy : Person
 {
-    private bool Alive = true;
-    public Enemy(int x, int y) : base(x, y) { }
+    [XmlElement("Alive")]
+    private bool _Alive;
+    public bool Alive
+    {
+        get => _Alive;
+        set { }
+    }
+
+    private Enemy() { }
+    public Enemy(int x, int y) : base(x, y)
+    {
+        _Alive = true;
+    }
 
     public void Kill()
     {
-        Alive = false;
-    }
-
-    public bool IsAlive()
-    {
-        return Alive;
+        _Alive = false;
     }
 
     new public bool Move(Node playerLocation)
     {
-        orientation = PreviousOrientation(orientation);
+        Orientation = PreviousOrientation(Orientation);
         while (!base.Move(playerLocation))
         {
-            orientation = NextOrientation(orientation);
+            Orientation = NextOrientation(Orientation);
         }
         return true;
     }

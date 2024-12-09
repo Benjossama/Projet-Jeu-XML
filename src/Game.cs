@@ -1,18 +1,48 @@
-using System.Diagnostics;
-using System.Net;
-using Microsoft.VisualBasic;
+using System.Dynamic;
+using System.Reflection.Metadata.Ecma335;
+using System.Xml.Serialization;
 
+[Serializable]
 public class Game
 {
-    volatile Maze maze;
-    volatile Player player = new Player(0, 0);
-    volatile Enemy[] enemies;
-    private volatile bool GameOver = false;
+    volatile private Maze maze;
+    [XmlElement("Maze")]
+    public Maze Maze
+    {
+        get => maze;
+        set { }
 
+    }
 
+    volatile private Player player;
+    [XmlElement("Player")]
+    public Player Player
+    {
+        get => player;
+        set { }
+    }
 
+    volatile private Enemy[] enemies;
+    [XmlArray("Enemies")]
+    [XmlArrayItem("Enemy")]
+    public Enemy[] Enemies
+    {
+        get => enemies;
+        set { enemies = value; }
+    }
+
+    volatile private bool _GameOver;
+    [XmlAttribute("GameOver")]
+    public bool GameOver
+    {
+        get => _GameOver;
+        set { }
+    }
+
+    private Game() { }
     public Game(int width, int height, int NbEnemies)
     {
+        player = new Player(0, 0);
         maze = new Maze(height, width);
         enemies = new Enemy[NbEnemies];
 
@@ -20,8 +50,9 @@ public class Game
         for (int i = 0; i < enemies.Length; i++)
         {
             enemies[i] = new Enemy(randomNumberGenerator.Next(height / 3, height), randomNumberGenerator.Next(width / 3, width));
-            // enemies[i] = new Enemy((height - 1), (width - 1));
+
         }
+        _GameOver = false;
 
         Update();
         Show();
@@ -30,11 +61,11 @@ public class Game
 
     public async void Update()
     {
-        while (!GameOver)
+        while (!_GameOver)
         {
             if (Winner() || PlayerDetected())
             {
-                GameOver = true;
+                _GameOver = true;
             }
             else
             {
@@ -43,13 +74,15 @@ public class Game
             }
             // Unlock door
             if (AllEnemiesKilled())
-                maze.getNode(maze.getHeight() - 1, maze.getWidth() - 1).setWall(Wall.BOTTOM, false);
+                maze.GetNode(maze.Height - 1, maze.Width - 1).BOTTOM = false;
+
+            XMLUtils.Save(this);
         }
     }
 
-    private async void Show()
+    public async void Show()
     {
-        while (!GameOver)
+        while (!_GameOver)
         {
             Engine.Print(maze, enemies, player, "Playing...");
             await Task.Delay(50);
@@ -59,7 +92,7 @@ public class Game
     public void RunPlayer()
     {
         // Boucle principale
-        while (!GameOver)
+        while (!_GameOver)
         {
             HandlePlayerInput();
         }
@@ -72,9 +105,9 @@ public class Game
     {
         foreach (var enemy in enemies)
         {
-            if (!enemy.IsAlive())
+            if (!enemy.Alive)
                 continue;
-            enemy.Move(maze.getNode(enemy.getX(), enemy.getY()));
+            enemy.Move(maze.GetNode(enemy.X, enemy.Y));
         }
     }
 
@@ -94,19 +127,19 @@ public class Game
         {
             case 'w':
             case 'W':
-                player.setOrientation(Orientation.NORTH);
+                player.Orientation = Orientation.NORTH;
                 break;
             case 'd':
             case 'D':
-                player.setOrientation(Orientation.EAST);
+                player.Orientation = Orientation.EAST;
                 break;
             case 's':
             case 'S':
-                player.setOrientation(Orientation.SOUTH);
+                player.Orientation = Orientation.SOUTH;
                 break;
             case 'a':
             case 'A':
-                player.setOrientation(Orientation.WEST);
+                player.Orientation = Orientation.WEST;
                 break;
             case 'P':
             case 'p':
@@ -119,15 +152,15 @@ public class Game
 
         if (!char.IsLower(input) && CanMove)
         {
-            player.Move(maze.getNode(player.getX(), player.getY()));
+            player.Move(maze.GetNode(player.X, player.Y));
         }
     }
     private void Shoot()
     {
         foreach (var enemy in enemies)
         {
-            Node PlayerNode = maze.getNode(player.getX(), player.getY());
-            Node EnemyNode = maze.getNode(enemy.getX(), enemy.getY());
+            Node PlayerNode = maze.GetNode(player.X, player.Y);
+            Node EnemyNode = maze.GetNode(enemy.X, enemy.Y);
             if (maze.NodeAVisibleFromB(PlayerNode, EnemyNode) && ACorrectlyOrientedTowardsB(player, enemy))
             {
                 enemy.Kill();
@@ -138,8 +171,8 @@ public class Game
 
     private bool Winner()
     {
-        bool isInLastNode = (player.getX() == maze.getHeight() - 1) && (player.getY() == maze.getWidth() - 1) && player.GetOrientation() == Orientation.SOUTH;
-        return isInLastNode && AllEnemiesKilled();
+        bool isOutOfMaze = (player.X > maze.Height - 1) && (player.Y >= maze.Width - 1);
+        return isOutOfMaze && AllEnemiesKilled();
     }
 
     private bool AllEnemiesKilled()
@@ -148,7 +181,7 @@ public class Game
         int i = 0;
         while (i < enemies.Length && !foundAliveEnemy)
         {
-            if (enemies[i].IsAlive())
+            if (enemies[i].Alive)
             {
                 foundAliveEnemy = true;
             }
@@ -161,15 +194,15 @@ public class Game
         bool detected = false;
         foreach (var enemy in enemies)
         {
-            Node playerNode = maze.getNode(player.getX(), player.getY());
-            Node enemyNode = maze.getNode(enemy.getX(), enemy.getY());
+            Node playerNode = maze.GetNode(player.X, player.Y);
+            Node enemyNode = maze.GetNode(enemy.X, enemy.Y);
 
             // Vérifie si le joueur est dans la ligne de vue de l'ennemi
             if (
                     ACorrectlyOrientedTowardsB(enemy, player) && // Enemy is facing the direction
                                                                  // on which the player is found
                     maze.NodeAVisibleFromB(playerNode, enemyNode) && // No wall between enemy and player
-                    enemy.IsAlive()
+                    enemy.Alive
                 )
             {
                 detected = true;
@@ -180,12 +213,12 @@ public class Game
     }
     private bool ACorrectlyOrientedTowardsB(Person A, Person B)
     {
-        return A.GetOrientation() switch
+        return A.Orientation switch
         {
-            Orientation.NORTH => A.getY() == B.getY() && B.getX() <= A.getX(),
-            Orientation.SOUTH => A.getY() == B.getY() && B.getX() >= A.getX(),
-            Orientation.EAST => A.getX() == B.getX() && B.getY() >= A.getY(),
-            Orientation.WEST => A.getX() == B.getX() && B.getY() <= A.getY(),
+            Orientation.NORTH => A.Y == B.Y && B.X <= A.X,
+            Orientation.SOUTH => A.Y == B.Y && B.X >= A.X,
+            Orientation.EAST => A.X == B.X && B.Y >= A.Y,
+            Orientation.WEST => A.X == B.X && B.Y <= A.Y,
             _ => false
         };
     }

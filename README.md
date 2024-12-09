@@ -13,3 +13,7 @@ Function to be worked on:
 - Ajoute move enemies, called async from update.
 
 - The idea is this, a singleton object called engine that can be called from all classes, like a global variable. It has a print method that can show either a maze of a game, based on overloadring.
+
+---
+
+- When serializing, in game, player and enemy and gameover were made public, there must be a better way to encapsulate the data.

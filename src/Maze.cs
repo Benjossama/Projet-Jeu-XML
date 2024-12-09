@@ -1,55 +1,117 @@
-using System.ComponentModel;
 using System.Dynamic;
-using System.Formats.Asn1;
-using System.Net.Security;
+using System.Xml.Serialization;
 
+[Serializable]
 public class Maze
 {
     private int width;
     private int height;
-    private Node[,] Grid;
+    [XmlElement("Width")]
+    public int Width
+    {
+        set
+        {
+            if (value <= 0)
+            {
+                throw new ArgumentException("Value must be strictly positive.");
+            }
+            width = value;
+        }
+        get => width;
+    }
+    [XmlElement("Height")]
+    public int Height
+    {
+        set
+        {
+            if (value <= 0)
+            {
+                throw new ArgumentException("Value must be strictly positive.");
+            }
+            height = value;
+        }
+        get => height;
+    }
+    [XmlIgnore]
+    private Node[,]? Grid;
+
+    [XmlArray("Nodes")]
+    [XmlArrayItem("Node")]
+    public List<Node> Nodes
+    {
+        get
+        {
+            List<Node> list = new List<Node>();
+            for (int i = 0; i < height; i++)
+            {
+                for (int j = 0; j < width; j++)
+                {
+                    Console.WriteLine("{0} {1}", Height, Width);
+                    list.Add(Grid[i, j]);
+                }
+            }
+            return list;
+        }
+        set
+        {
+            for (int i = 0; i < Height; i++)
+            {
+                for (int j = 0; j < Width; j++)
+                {
+                    Grid[i, j] = value[i * height + j];
+                }
+            }
+        }
+    }
+
+    [XmlIgnore]
     Random randomNumberGenerator = new Random();
+    [XmlIgnore]
     HashSet<Node> VisitedNodes = new HashSet<Node>();
 
+
+    // The parameterless private constructor below is used later for serialization and deserialization
+    private Maze()
+    {
+        Console.Write("Creating... {0} {1}\n", Width, Height);
+        // Grid = new Node[Height, Width];
+    }
     public Maze(int height, int width)
     {
-        this.height = height;
-        this.width = width;
-        Grid = new Node[height, width];
+        Height = height;
+        Width = width;
+        Grid = new Node[Height, Width];
         // Initalizing all the nodes
         for (int x = 0; x < height; x++)
         {
-            for (int y = 0; y < width; y++)
+            for (int y = 0; y < Width; y++)
             {
                 Grid[x, y] = new Node();
-                Grid[x, y].setX(x);
-                Grid[x, y].setY(y);
+                Grid[x, y].X = x;
+                Grid[x, y].Y = y;
             }
         }
 
         generate();
     }
 
-    public int getHeight()
+    public Node GetNode(int x, int y)
     {
-        return height;
-    }
-
-    public int getWidth()
-    {
-        return width;
-    }
-
-    public Node getNode(int x, int y)
-    {
-        return Grid[x, y];
+        try
+        {
+            return Grid[x, y];
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return new Node();
+        }
     }
 
     private List<Node> getNeighbors(Node node)
     {
         List<Node> neighbors = new List<Node>();
-        int x = node.getX();
-        int y = node.getY();
+        int x = node.X;
+        int y = node.Y;
 
         (int dx, int dy)[] directions = { (1, 0), (-1, 0), (0, 1), (0, -1) };
 
@@ -76,8 +138,8 @@ public class Maze
         while (stack.Count > 0)
         {
 
-            Engine.Print(this, null, null, "Loading...");
-            Task.Delay(25).Wait();
+            // Engine.Print(this, null, null, "Loading...");
+            // Task.Delay(25).Wait();
 
             Node current = stack.Pop();
             List<Node> neighbors = getNeighbors(current);
@@ -95,44 +157,44 @@ public class Maze
 
     void removeWall(Node a, Node b)
     {
-        int xOffset = a.getX() - b.getX();
-        int yOffset = a.getY() - b.getY();
+        int xOffset = a.X - b.X;
+        int yOffset = a.Y - b.Y;
         // Case of a being above b
         if (xOffset == 1)
         {
-            a.setWall(Wall.TOP, false);
-            b.setWall(Wall.BOTTOM, false);
+            a.TOP = false;
+            b.BOTTOM = false;
         }
         // Case of a being under b
         else if (xOffset == -1)
         {
-            a.setWall(Wall.BOTTOM, false);
-            b.setWall(Wall.TOP, false);
+            a.BOTTOM = false;
+            b.TOP = false;
         }
         // Case of a being to the right of b
         else if (yOffset == 1)
         {
-            a.setWall(Wall.LEFT, false);
-            b.setWall(Wall.RIGHT, false);
+            a.LEFT = false;
+            b.RIGHT = false;
         }
         // Case of a being to the left of b
         else if (yOffset == -1)
         {
-            a.setWall(Wall.RIGHT, false);
-            b.setWall(Wall.LEFT, false);
+            a.RIGHT = false;
+            b.LEFT = false;
         }
     }
 
     public bool NodeAVisibleFromB(Node a, Node b)
     {
-        if (a.getX() == b.getX() && a.getY() == b.getY())
+        if (a.X == b.X && a.Y == b.Y)
             return true;
 
-        else if (a.getX() == b.getX())
-            return IsPathClear(a.getX(), a.getY(), b.getY(), true);
+        else if (a.X == b.X)
+            return IsPathClear(a.X, a.Y, b.Y, true);
 
-        else if (a.getY() == b.getY())
-            return IsPathClear(a.getY(), a.getX(), b.getX(), false);
+        else if (a.Y == b.Y)
+            return IsPathClear(a.Y, a.X, b.X, false);
 
         else
             return false;
@@ -145,13 +207,13 @@ public class Maze
         bool ClearPath = true;
         for (int i = min; i <= max; i++)
         {
-            var node = isVertical ? getNode(fixedCoordinate, i) : getNode(i, fixedCoordinate);
+            var node = isVertical ? GetNode(fixedCoordinate, i) : GetNode(i, fixedCoordinate);
 
-            if ((i == min && (isVertical ? node.GetRightWall() : node.GetBottomWall())) ||
-                (i == max && (isVertical ? node.GetLeftWall() : node.GetTopWall())) ||
+            if ((i == min && (isVertical ? node.RIGHT : node.BOTTOM)) ||
+                (i == max && (isVertical ? node.LEFT : node.TOP)) ||
                 (i > min && i < max &&
-                 ((isVertical ? node.GetLeftWall() || node.GetRightWall()
-                              : node.GetTopWall() || node.GetBottomWall()))))
+                 ((isVertical ? node.LEFT || node.RIGHT
+                              : node.TOP || node.BOTTOM))))
             {
                 ClearPath = false;
             }

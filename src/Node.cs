@@ -1,3 +1,5 @@
+using System.Xml.Serialization;
+
 public enum Wall
 {
     TOP,
@@ -6,91 +8,55 @@ public enum Wall
     LEFT
 };
 
+[Serializable]
 public class Node
 {
-    // Tracking the Node's position
+    // Tracking the Node's position   // Tracking the Node's position
     private int x;
+    [XmlElement("X")]
+    public int X
+    {
+        set
+        {
+            if (value < 0)
+            {
+                throw new ArgumentException("Value must be positive.");
+            }
+            x = value;
+        }
+        get => x;
+    }
     private int y;
-    private Dictionary<Wall, bool> walls = new Dictionary<Wall, bool>();
+    [XmlElement("Y")]
+    public int Y
+    {
+        set
+        {
+            if (value < 0)
+            {
+                throw new ArgumentException("Value must be positive.");
+            }
+            y = value;
+        }
+        get => y;
+    }
+
+    // Walls represented as XML attributes
+    [XmlElement("LeftWall")]
+    public bool LEFT { set; get; }
+
+    [XmlElement("TopWall")]
+    public bool TOP { set; get; }
+
+    [XmlElement("RightWall")]
+    public bool RIGHT { set; get; }
+
+    [XmlElement("BottomWall")]
+    public bool BOTTOM { set; get; }
     //Useful for generating the maze, that's all, need not be serialized
 
     public Node()
     {
-        walls.Add(Wall.TOP, true);
-        walls.Add(Wall.RIGHT, true);
-        walls.Add(Wall.BOTTOM, true);
-        walls.Add(Wall.LEFT, true);
-    }
-
-    public void setWall(Wall wall, bool state)
-    {
-        walls[wall] = state;
-    }
-
-    public bool GetTopWall()
-    {
-        return walls[Wall.TOP];
-    }
-
-    public bool GetRightWall()
-    {
-        return walls[Wall.RIGHT];
-    }
-    public bool GetBottomWall()
-    {
-        return walls[Wall.BOTTOM];
-    }
-    public bool GetLeftWall()
-    {
-        return walls[Wall.LEFT];
-    }
-
-    public void show()
-    {
-        // Première ligne : Mur du haut
-        if (walls[Wall.TOP])
-            Console.WriteLine(" --- ");
-        else
-            Console.WriteLine("     ");
-
-        // Ligne centrale avec murs gauche et droite
-        if (walls[Wall.LEFT])
-            Console.Write("|");
-        else
-            Console.Write(" ");
-
-        Console.Write("   "); // espace au centre pour le nœud lui-même
-
-        if (walls[Wall.RIGHT])
-            Console.WriteLine("|");
-        else
-            Console.WriteLine(" ");
-
-        // Dernière ligne : Mur du bas
-        if (walls[Wall.BOTTOM])
-            Console.WriteLine(" --- ");
-        else
-            Console.WriteLine("     ");
-    }
-
-
-    public void setX(int x)
-    {
-        this.x = x;
-    }
-
-    public void setY(int y)
-    {
-        this.y = y;
-    }
-
-    public int getX()
-    {
-        return x;
-    }
-
-    public int getY()
-    {
-        return y;
+        TOP = BOTTOM = RIGHT = LEFT = true;
     }
 };

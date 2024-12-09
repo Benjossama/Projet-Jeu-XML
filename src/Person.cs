@@ -1,3 +1,5 @@
+using System.Xml.Serialization;
+
 public enum Orientation
 {
     NORTH,
@@ -5,78 +7,84 @@ public enum Orientation
     SOUTH,
     WEST
 }
+
+[Serializable]
 abstract public class Person
 {
     private int x;
+    [XmlElement("X")]
+    public int X
+    {
+        set
+        {
+            if (value < 0)
+            {
+                throw new ArgumentException("Value must be positive.");
+            }
+            x = value;
+        }
+        get => x;
+    }
     private int y;
-    protected Orientation orientation;
+    [XmlElement("Y")]
+    public int Y
+    {
+        set
+        {
+            if (value < 0)
+            {
+                throw new ArgumentException("Value must be positive.");
+            }
+            y = value;
+        }
+        get => y;
+    }
+    [XmlElement("Orientation")]
+    public Orientation Orientation { get; set; }
+
+    protected Person() { }
     public Person(int x, int y)
     {
-        this.x = x;
-        this.y = y;
-        orientation = Orientation.EAST;
-    }
-    public int getX()
-    {
-        return x;
-    }
-    public void setX(int x)
-    {
-        this.x = x;
-    }
-    public int getY()
-    {
-        return y;
+        X = x;
+        Y = y;
+        Orientation = Orientation.EAST;
     }
 
-    public void setY(int y)
+    protected Orientation NextOrientation(Orientation Orientation)
     {
-        this.y = y;
-    }
-    public Orientation GetOrientation()
-    {
-        return orientation;
-    }
-    public void setOrientation(Orientation orientation)
-    {
-        this.orientation = orientation;
+        return Orientation == Orientation.WEST ? Orientation.NORTH : Orientation + 1;
     }
 
-    protected Orientation NextOrientation(Orientation orientation)
+    protected Orientation PreviousOrientation(Orientation Orientation)
     {
-        return orientation == Orientation.WEST ? Orientation.NORTH : orientation + 1;
-    }
-
-    protected Orientation PreviousOrientation(Orientation orientation)
-    {
-        return orientation == Orientation.NORTH ? Orientation.WEST : orientation - 1;
+        return Orientation == Orientation.NORTH ? Orientation.WEST : Orientation - 1;
     }
 
 
     public bool Move(Node playerLocation)
     {
         // Check if the current cell has a wall in the side facing the orientation of the person
-        if (GetOrientation() == Orientation.NORTH && !playerLocation.GetTopWall())
+        if (Orientation == Orientation.NORTH && !playerLocation.TOP)
         {
-            setX(getX() - 1);
+            X = X - 1;
             return true;
 
         }
-        else if (GetOrientation() == Orientation.EAST && !playerLocation.GetRightWall())
+        else if (Orientation == Orientation.EAST && !playerLocation.RIGHT)
         {
-            setY(getY() + 1);
+            Y = Y + 1;
             return true;
 
         }
-        else if (GetOrientation() == Orientation.SOUTH && !playerLocation.GetBottomWall())
+        else if (Orientation == Orientation.SOUTH && !playerLocation.BOTTOM)
         {
-            setX(getX() + 1);
+            X = X + 1;
             return true;
 
         }
-        else if (GetOrientation() == Orientation.WEST && !playerLocation.GetLeftWall())
+        else if (Orientation == Orientation.WEST && !playerLocation.LEFT)
         {
-            setY(getY() - 1);
+            Y = Y - 1;
             return true;
 
         }
@@ -86,7 +94,7 @@ abstract public class Person
     public override string ToString()
     {
         String p = ">";
-        switch (GetOrientation())
+        switch (Orientation)
         {
             case Orientation.NORTH:
                 p = "ʌ";
