@@ -1,94 +1,67 @@
-using System.Dynamic;
+using System;
+using System.Collections.Generic;
+using System.Xml;
 using System.Xml.Serialization;
 
+
 [Serializable]
-public class Maze
+[XmlRoot("Maze", Namespace = "www.silentstrike.com")]
+public class Maze : IXmlSerializable
 {
-    private int width;
-    private int height;
-    [XmlElement("Width")]
+
+    // The maze class starts
+    private int _width;
+    private int _height;
     public int Width
     {
         set
         {
             if (value <= 0)
             {
-                throw new ArgumentException("Value must be strictly positive.");
+                throw new ArgumentException("Width must be strictly positive.");
             }
-            width = value;
+            _width = value;
         }
-        get => width;
+        get => _width;
     }
-    [XmlElement("Height")]
     public int Height
     {
         set
         {
             if (value <= 0)
             {
-                throw new ArgumentException("Value must be strictly positive.");
+                throw new ArgumentException("Height must be strictly positive.");
             }
-            height = value;
+            _height = value;
         }
-        get => height;
-    }
-    [XmlIgnore]
-    private Node[,]? Grid;
-
-    [XmlArray("Nodes")]
-    [XmlArrayItem("Node")]
-    public List<Node> Nodes
-    {
-        get
-        {
-            List<Node> list = new List<Node>();
-            for (int i = 0; i < height; i++)
-            {
-                for (int j = 0; j < width; j++)
-                {
-                    Console.WriteLine("{0} {1}", Height, Width);
-                    list.Add(Grid[i, j]);
-                }
-            }
-            return list;
-        }
-        set
-        {
-            for (int i = 0; i < Height; i++)
-            {
-                for (int j = 0; j < Width; j++)
-                {
-                    Grid[i, j] = value[i * height + j];
-                }
-            }
-        }
+        get => _height;
     }
 
-    [XmlIgnore]
-    Random randomNumberGenerator = new Random();
-    [XmlIgnore]
-    HashSet<Node> VisitedNodes = new HashSet<Node>();
+
+    private Node[][] Grid;
+
+    private Random randomNumberGenerator = new Random();
+    private HashSet<Node> VisitedNodes = new HashSet<Node>();
 
 
     // The parameterless private constructor below is used later for serialization and deserialization
     private Maze()
     {
-        Console.Write("Creating... {0} {1}\n", Width, Height);
-        // Grid = new Node[Height, Width];
     }
-    public Maze(int height, int width)
+    public Maze(int _height, int _width)
     {
-        Height = height;
-        Width = width;
-        Grid = new Node[Height, Width];
+        Height = _height;
+        Width = _width;
+        Grid = new Node[Height][];
         // Initalizing all the nodes
-        for (int x = 0; x < height; x++)
+        for (int x = 0; x < _height; x++)
         {
-            for (int y = 0; y < Width; y++)
+            Grid[x] = new Node[_width];
+            for (int y = 0; y < _width; y++)
             {
-                Grid[x, y] = new Node();
-                Grid[x, y].X = x;
-                Grid[x, y].Y = y;
+                Grid[x][y] = new Node();
+                Grid[x][y].X = x;
+                Grid[x][y].Y = y;
             }
         }
 
@@ -99,7 +72,7 @@ public class Maze
     {
         try
         {
-            return Grid[x, y];
+            return Grid[x][y];
         }
         catch (IndexOutOfRangeException)
         {
@@ -120,9 +93,9 @@ public class Maze
             int newX = x + dx;
             int newY = y + dy;
 
-            if (newX >= 0 && newY >= 0 && newX < height && newY < width && !VisitedNodes.Contains(Grid[newX, newY]))
+            if (newX >= 0 && newY >= 0 && newX < _height && newY < _width && !VisitedNodes.Contains(Grid[newX][newY]))
             {
-                neighbors.Add(Grid[newX, newY]);
+                neighbors.Add(Grid[newX][newY]);
             }
         }
 
@@ -133,13 +106,13 @@ public class Maze
     void generate()
     {
         Stack<Node> stack = new Stack<Node>();
-        VisitedNodes.Add(Grid[0, 0]);
-        stack.Push(Grid[0, 0]);
+        VisitedNodes.Add(Grid[0][0]);
+        stack.Push(Grid[0][0]);
         while (stack.Count > 0)
         {
 
             // Engine.Print(this, null, null, "Loading...");
-            // Task.Delay(25).Wait();
+            // Task.Delay(1).Wait();
 
             Node current = stack.Pop();
             List<Node> neighbors = getNeighbors(current);
@@ -185,7 +158,7 @@ public class Maze
         }
     }
 
-    public bool NodeAVisibleFromB(Node a, Node b)
+    public bool NoWallBetweenNodes(Node a, Node b)
     {
         if (a.X == b.X && a.Y == b.Y)
             return true;
@@ -220,6 +193,77 @@ public class Maze
         }
 
         return ClearPath;
+    }
+
+
+    public System.Xml.Schema.XmlSchema? GetSchema() => null;
+
+    public void WriteXml(XmlWriter writer)
+    {
+        writer.WriteElementString("Width", Width.ToString());
+        writer.WriteElementString("Height", Height.ToString());
+
+        writer.WriteStartElement("Grid");
+        foreach (var row in Grid)
+        {
+            writer.WriteStartElement("Row");
+            foreach (var node in row)
+            {
+                // Serialize Node
+                writer.WriteStartElement("Node"); // <Node>
+
+                // Write attributes and elements for Node properties
+                writer.WriteElementString("X", node.X.ToString());
+                writer.WriteElementString("Y", node.Y.ToString());
+                writer.WriteElementString("LEFT", node.LEFT.ToString().ToLower());
+                writer.WriteElementString("TOP", node.TOP.ToString().ToLower());
+                writer.WriteElementString("RIGHT", node.RIGHT.ToString().ToLower());
+                writer.WriteElementString("BOTTOM", node.BOTTOM.ToString().ToLower());
+
+                writer.WriteEndElement(); // </Node>
+            }
+            writer.WriteEndElement(); // End <Row>
+        }
+        writer.WriteEndElement(); // End <Grid>
+    }
+
+
+    public void ReadXml(XmlReader reader)
+    {
+        reader.ReadStartElement(); // Start <Maze>
+
+        Width = int.Parse(reader.ReadElementString("Width"));
+        Height = int.Parse(reader.ReadElementString("Height"));
+
+        Grid = new Node[Height][];
+
+        reader.ReadStartElement("Grid");
+        for (int x = 0; x < Height; x++)
+        {
+            reader.ReadStartElement("Row");
+            Grid[x] = new Node[Width];
+            for (int y = 0; y < Width; y++)
+            {
+                reader.ReadStartElement("Node"); // <Node>
+
+                Grid[x][y] = new Node
+                {
+                    X = int.Parse(reader.ReadElementString("X")),
+                    Y = int.Parse(reader.ReadElementString("Y")),
+                    LEFT = bool.Parse(reader.ReadElementString("LEFT")),
+                    TOP = bool.Parse(reader.ReadElementString("TOP")),
+                    RIGHT = bool.Parse(reader.ReadElementString("RIGHT")),
+                    BOTTOM = bool.Parse(reader.ReadElementString("BOTTOM"))
+                };
+
+                reader.ReadEndElement(); // </Node>
+
+            }
+            reader.ReadEndElement(); // End <Row>
+        }
+        reader.ReadEndElement(); // End <Grid>
+
+        reader.ReadEndElement(); // End <Maze>
     }
 
 }

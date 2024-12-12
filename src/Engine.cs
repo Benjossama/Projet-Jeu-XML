@@ -61,10 +61,21 @@ class Engine
         {
             if (enemies[i].X == x && enemies[i].Y == y)
             {
-                return i; // Retourne l'indice de l'ennemi trouvé
+                return i;
             }
         }
-        return -1; // Aucun ennemi trouvé
+        return -1; // Nothing was found
     }
 
+    public static void PrintSavedGamesTable(FileInfo[] files)
+    {
+        Console.WriteLine("------------------------------------------------");
+        Console.WriteLine($"| {"Index",-5} | Filename");
+        Console.WriteLine("------------------------------------------------");
+        for (int i = 0; i < files.Length; i++)
+        {
+            Console.WriteLine($"| {i,-5} | {files[i].Name,-25} ");
+        }
+        Console.WriteLine("------------------------------------------------");
+    }
 }

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <!-- Root Element -->
+  <xs:element name="Game">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="GameOver" type="xs:boolean" />
+        <xs:element name="Filename" type="xs:string" />
+        <xs:element name="Player" type="PlayerType" />
+        <xs:element name="Enemies" type="EnemiesType" />
+        <xs:element name="Maze" type="MazeType" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Player Type -->
+  <xs:complexType name="PlayerType">
+    <xs:sequence>
+      <xs:element name="X" type="xs:int" />
+      <xs:element name="Y" type="xs:int" />
+      <xs:element name="Orientation" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Enemies Type -->
+  <xs:complexType name="EnemiesType">
+    <xs:sequence>
+      <xs:element name="Enemy" type="EnemyType" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Enemy Type -->
+  <xs:complexType name="EnemyType">
+    <xs:sequence>
+      <xs:element name="X" type="xs:int" />
+      <xs:element name="Y" type="xs:int" />
+      <xs:element name="Orientation" type="xs:string" />
+      <xs:element name="Alive" type="xs:boolean" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Maze Type -->
+  <xs:complexType name="MazeType">
+    <xs:sequence>
+      <xs:element name="Width" type="xs:int" />
+      <xs:element name="Height" type="xs:int" />
+      <xs:element name="Grid" type="GridType" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Grid Type -->
+  <xs:complexType name="GridType">
+    <xs:sequence>
+      <xs:element name="Row" type="RowType" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Row Type -->
+  <xs:complexType name="RowType">
+    <xs:sequence>
+      <xs:element name="Node" type="NodeType" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Node Type -->
+  <xs:complexType name="NodeType">
+    <xs:sequence>
+      <xs:element name="X" type="xs:int" />
+      <xs:element name="Y" type="xs:int" />
+      <xs:element name="LeftWall" type="xs:boolean" />
+      <xs:element name="TopWall" type="xs:boolean" />
+      <xs:element name="RightWall" type="xs:boolean" />
+      <xs:element name="BottomWall" type="xs:boolean" />
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>

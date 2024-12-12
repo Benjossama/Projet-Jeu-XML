@@ -8,7 +8,7 @@ public class Enemy : Person
     public bool Alive
     {
         get => _Alive;
-        set { }
+        set => _Alive = value;
     }
 
     private Enemy() { }

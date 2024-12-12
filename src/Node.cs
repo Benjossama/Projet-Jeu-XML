@@ -7,34 +7,29 @@ public enum Wall
     BOTTOM,
     LEFT
 };
-
-[Serializable]
 public class Node
 {
-    // Tracking the Node's position   // Tracking the Node's position
     private int x;
-    [XmlElement("X")]
     public int X
     {
         set
         {
             if (value < 0)
             {
-                throw new ArgumentException("Value must be positive.");
+                throw new ArgumentException("X value must be positive.");
             }
             x = value;
         }
         get => x;
     }
     private int y;
-    [XmlElement("Y")]
     public int Y
     {
         set
         {
             if (value < 0)
             {
-                throw new ArgumentException("Value must be positive.");
+                throw new ArgumentException("Y values must be positive.");
             }
             y = value;
         }
@@ -42,16 +37,12 @@ public class Node
     }
 
     // Walls represented as XML attributes
-    [XmlElement("LeftWall")]
     public bool LEFT { set; get; }
 
-    [XmlElement("TopWall")]
     public bool TOP { set; get; }
 
-    [XmlElement("RightWall")]
     public bool RIGHT { set; get; }
 
-    [XmlElement("BottomWall")]
     public bool BOTTOM { set; get; }
     //Useful for generating the maze, that's all, need not be serialized
 

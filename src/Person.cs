@@ -11,7 +11,7 @@ public enum Orientation
 [Serializable]
 abstract public class Person
 {
-    private int x;
+    private int _x;
     [XmlElement("X")]
     public int X
     {
@@ -21,11 +21,11 @@ abstract public class Person
             {
                 throw new ArgumentException("Value must be positive.");
             }
-            x = value;
+            _x = value;
         }
-        get => x;
+        get => _x;
     }
-    private int y;
+    private int _y;
     [XmlElement("Y")]
     public int Y
     {
@@ -35,9 +35,9 @@ abstract public class Person
             {
                 throw new ArgumentException("Value must be positive.");
             }
-            y = value;
+            _y = value;
         }
-        get => y;
+        get => _y;
     }
     [XmlElement("Orientation")]
     public Orientation Orientation { get; set; }

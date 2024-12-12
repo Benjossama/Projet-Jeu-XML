@@ -1,47 +1,22 @@
-using System.Dynamic;
-using System.Reflection.Metadata.Ecma335;
+using System;
+using System.Collections.Generic;
+using System.Xml;
 using System.Xml.Serialization;
 
+[XmlRoot("Game", Namespace = "http://www.silentstrike.com", IsNullable = false)]
 [Serializable]
 public class Game
 {
-    volatile private Maze maze;
-    [XmlElement("Maze")]
-    public Maze Maze
-    {
-        get => maze;
-        set { }
-
-    }
-
-    volatile private Player player;
-    [XmlElement("Player")]
-    public Player Player
-    {
-        get => player;
-        set { }
-    }
-
-    volatile private Enemy[] enemies;
-    [XmlArray("Enemies")]
-    [XmlArrayItem("Enemy")]
-    public Enemy[] Enemies
-    {
-        get => enemies;
-        set { enemies = value; }
-    }
-
-    volatile private bool _GameOver;
-    [XmlAttribute("GameOver")]
-    public bool GameOver
-    {
-        get => _GameOver;
-        set { }
-    }
+    volatile public Maze maze;
+    volatile public Player player;
+    volatile public Enemy[] enemies;
+    volatile public bool GameOver;
+    public string? Filename;
 
     private Game() { }
-    public Game(int width, int height, int NbEnemies)
+    public Game(int height, int width, int NbEnemies, string filename)
     {
+        this.Filename = filename;
         player = new Player(0, 0);
         maze = new Maze(height, width);
         enemies = new Enemy[NbEnemies];
@@ -52,7 +27,7 @@ public class Game
             enemies[i] = new Enemy(randomNumberGenerator.Next(height / 3, height), randomNumberGenerator.Next(width / 3, width));
 
         }
-        _GameOver = false;
+        GameOver = false;
 
         Update();
         Show();
@@ -61,11 +36,12 @@ public class Game
 
     public async void Update()
     {
-        while (!_GameOver)
+        // if (maze == null) throw new ArgumentNullException("maze
+        while (!GameOver)
         {
             if (Winner() || PlayerDetected())
             {
-                _GameOver = true;
+                GameOver = true;
             }
             else
             {
@@ -75,24 +51,24 @@ public class Game
             // Unlock door
             if (AllEnemiesKilled())
                 maze.GetNode(maze.Height - 1, maze.Width - 1).BOTTOM = false;
-
-            XMLUtils.Save(this);
+            // Saving after every iteration
+            XMLUtils.Save(this, Filename);
         }
     }
 
     public async void Show()
     {
-        while (!_GameOver)
+        while (!GameOver)
         {
-            Engine.Print(maze, enemies, player, "Playing...");
-            await Task.Delay(50);
+            Engine.Print(maze, enemies, player, $"Playing: {Filename}");
+            await Task.Delay(10);
         }
     }
 
     public void RunPlayer()
     {
         // Boucle principale
-        while (!_GameOver)
+        while (!GameOver)
         {
             HandlePlayerInput();
         }
@@ -116,7 +92,6 @@ public class Game
     {
         string text = Winner() ? "You won!" : "You died!"; ;
         Engine.Print(maze, enemies, player, text);
-
     }
 
     private void HandlePlayerInput()
@@ -155,19 +130,22 @@ public class Game
             player.Move(maze.GetNode(player.X, player.Y));
         }
     }
+
+
     private void Shoot()
     {
         foreach (var enemy in enemies)
         {
             Node PlayerNode = maze.GetNode(player.X, player.Y);
             Node EnemyNode = maze.GetNode(enemy.X, enemy.Y);
-            if (maze.NodeAVisibleFromB(PlayerNode, EnemyNode) && ACorrectlyOrientedTowardsB(player, enemy))
+            if (maze.NoWallBetweenNodes(PlayerNode, EnemyNode) && ACorrectlyOrientedTowardsB(player, enemy))
             {
                 enemy.Kill();
             }
         }
 
     }
+
 
     private bool Winner()
     {
@@ -189,6 +167,8 @@ public class Game
         }
         return !foundAliveEnemy;
     }
+
+
     private bool PlayerDetected()
     {
         bool detected = false;
@@ -201,7 +181,7 @@ public class Game
             if (
                     ACorrectlyOrientedTowardsB(enemy, player) && // Enemy is facing the direction
                                                                  // on which the player is found
-                    maze.NodeAVisibleFromB(playerNode, enemyNode) && // No wall between enemy and player
+                    maze.NoWallBetweenNodes(playerNode, enemyNode) && // No wall between enemy and player
                     enemy.Alive
                 )
             {
@@ -211,6 +191,8 @@ public class Game
 
         return detected; // Aucun ennemi n'a détecté le joueur
     }
+
+
     private bool ACorrectlyOrientedTowardsB(Person A, Person B)
     {
         return A.Orientation switch
