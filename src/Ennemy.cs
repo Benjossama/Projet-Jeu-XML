@@ -3,15 +3,15 @@ using System.Xml.Serialization;
 [Serializable]
 public class Enemy : Person
 {
-    [XmlElement("Alive")]
     private bool _Alive;
+    [XmlElement("Alive")]
     public bool Alive
     {
         get => _Alive;
         set => _Alive = value;
     }
 
-    private Enemy() { }
+    public Enemy() { }
     public Enemy(int x, int y) : base(x, y)
     {
         _Alive = true;
@@ -22,10 +22,10 @@ public class Enemy : Person
         _Alive = false;
     }
 
-    new public bool Move(Node playerLocation)
+    new public bool Move(Node enemyLocation)
     {
         Orientation = PreviousOrientation(Orientation);
-        while (!base.Move(playerLocation))
+        while (!base.Move(enemyLocation))
         {
             Orientation = NextOrientation(Orientation);
         }

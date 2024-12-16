@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Xml.Serialization;
 class Program
 {
     public static void Main(string[] args)
@@ -16,18 +17,17 @@ class Program
 
             if (choice == "1")
             {
-                Console.Write("Enter game height: ");
+                Console.Write("Enter game height (< 40): ");
                 int height = int.Parse(Console.ReadLine() ?? throw new Exception("Could not read input."));
 
-                Console.Write("Enter game width: ");
+                Console.Write("Enter game width (< 40): ");
                 int width = int.Parse(Console.ReadLine() ?? throw new Exception("Could not read input."));
 
-                Console.Write("Enter number of enemies: ");
+                Console.Write("Enter number of enemies (< 40): ");
                 int enemies = int.Parse(Console.ReadLine() ?? throw new Exception("Could not read input."));
 
                 Console.Write("Enter a name for the game file: ");
                 string filename = Console.ReadLine() + ".xml";
-
                 // Creating a new game with the provided parameters
                 Game game = new Game(height, width, enemies, filename);
             }
@@ -40,11 +40,11 @@ class Program
                 // We do not throw an exception here because no games being saved is not an error.
                 if (files.Length == 0)
                 {
-                    Console.WriteLine("No saved games found.");
+                    Graphics.PrintError("No saved games found.");
                     return;
                 }
 
-                Engine.PrintSavedGamesTable(files);
+                Graphics.PrintSavedGamesTable(files);
 
                 Console.Write("Enter the number of the game to load: ");
                 int index = int.Parse(Console.ReadLine() ?? throw new Exception("Could not read input."));
@@ -53,18 +53,27 @@ class Program
                 {
                     throw new ArgumentException("Invalid arguments.");
                 }
-
+                // Load the game
                 XMLUtils.Load(files[index].Name);
             }
             else
             {
                 throw new ArgumentException("Invalid arguments.");
             }
+
+            // At the end update the menus
+            XMLUtils.UpdateSavedGamesMenu("data/saved_games", "data/menu.xml");
+            XMLUtils.RunXSLT("data/xslt/convertMenuToHTML.xslt", "data/menu.xml", "data/menu.html");
+
+        }
+        catch (ArgumentException e)
+        {
+            Graphics.PrintError($"Invalid arguments.\n{e.Message}\nPlease restart the game and try again.");
         }
         catch (Exception e)
         {
-            Console.WriteLine("An error occurred: " + e.Message);
-            Console.WriteLine("Please restart the program and try again.");
+            Graphics.PrintError($"Error occured: {e.Message}\nPlease restart the game and try again.");
         }
+
     }
 }

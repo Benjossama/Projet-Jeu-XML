@@ -1,0 +1,60 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f4f4f4;
+  }
+
+  #maze-container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .title {
+    text-align: center;
+    font-family:Georgia, 'Times New Roman', Times, serif;
+    font-size: 20px;
+    /* font-size: 400px; */
+  }
+
+  .row {
+    display: flex;
+  }
+
+  .node {
+    width: 30px;
+    height: 30px;
+    box-sizing: border-box; /* Ensure borders don't change size */
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* Wall classes */
+  .wall-top {
+    border-top: 0.9px solid black;
+  }
+
+  .wall-right {
+    border-right: 0.9px solid black;
+    /* border-top-right-radius: 5px; */
+  }
+
+  .wall-bottom {
+    border-bottom: 0.9px solid black;
+    /* border-bottom-right-radius: 5px; */
+  }
+
+  .wall-left {
+    border-left: 0.9px solid black;
+    /* border-bottom-left-radius: 5px; */
+  }
+
+  .red {
+    color: red;
+  }

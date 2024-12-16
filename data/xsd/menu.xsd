@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:menu="http://www.silentstrike.com/menu"
+           targetNamespace="http://www.silentstrike.com/menu"
+           elementFormDefault="qualified">
+
+  <xs:element name="saved_games" type="menu:savedGamesType"/>
+
+  <xs:complexType name="savedGamesType">
+    <xs:sequence>
+      <xs:element name="file" maxOccurs="unbounded" minOccurs="0" type="menu:fileType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="fileType">
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="last_modified" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>

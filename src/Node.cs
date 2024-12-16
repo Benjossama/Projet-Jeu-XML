@@ -7,6 +7,8 @@ public enum Wall
     BOTTOM,
     LEFT
 };
+
+[Serializable]
 public class Node
 {
     private int x;
@@ -16,7 +18,7 @@ public class Node
         {
             if (value < 0)
             {
-                throw new ArgumentException("X value must be positive.");
+                throw new ArgumentOutOfRangeException("X value must be positive.");
             }
             x = value;
         }
@@ -29,7 +31,7 @@ public class Node
         {
             if (value < 0)
             {
-                throw new ArgumentException("Y values must be positive.");
+                throw new ArgumentOutOfRangeException("Y values must be positive.");
             }
             y = value;
         }

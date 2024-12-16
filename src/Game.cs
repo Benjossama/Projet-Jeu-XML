@@ -3,77 +3,103 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Serialization;
 
-[XmlRoot("Game", Namespace = "http://www.silentstrike.com", IsNullable = false)]
+public enum GameState
+{
+    Over,
+    Paused,
+    Running,
+    Quitting
+}
+
+[XmlRoot("Game", Namespace = "http://www.silentstrike.com/game", IsNullable = false)]
 [Serializable]
+
 public class Game
 {
+
     volatile public Maze maze;
     volatile public Player player;
     volatile public Enemy[] enemies;
-    volatile public bool GameOver;
-    public string? Filename;
+    volatile public GameState State;
+    public string filename;
 
-    private Game() { }
+    // Used for serialization and deserialization.
+#pragma warning disable
+    private Game()
+    {
+    }
+#pragma warning restore
+
     public Game(int height, int width, int NbEnemies, string filename)
     {
-        this.Filename = filename;
+        // Check that NbEnemies is valid
+        if (NbEnemies >= 40 || NbEnemies < 1)
+            throw new ArgumentOutOfRangeException("Number of enemies must be between 1 and 40.");
+
+        // Copying variables & settings up variables
+        this.filename = filename;
         player = new Player(0, 0);
         maze = new Maze(height, width);
         enemies = new Enemy[NbEnemies];
+        State = GameState.Running;
 
-        Random randomNumberGenerator = new Random();
+        // Setting up enemies
+        Random Rand = new Random();
         for (int i = 0; i < enemies.Length; i++)
         {
-            enemies[i] = new Enemy(randomNumberGenerator.Next(height / 3, height), randomNumberGenerator.Next(width / 3, width));
+            enemies[i] = new Enemy(Rand.Next(height / 3, height), Rand.Next(width / 3, width));
 
         }
-        GameOver = false;
-
+        // Create the file and save the initial state of the game
+        XMLUtils.Save(this, this.filename);
+        // Start running the game
         Update();
         Show();
-        RunPlayer();
+        Run();
     }
 
     public async void Update()
     {
-        // if (maze == null) throw new ArgumentNullException("maze
-        while (!GameOver)
+        while (State != GameState.Over && State != GameState.Quitting)
         {
             if (Winner() || PlayerDetected())
             {
-                GameOver = true;
+                State = GameState.Over;
             }
-            else
+            else if (State == GameState.Running)
             {
                 MoveEnemies();
-                await Task.Delay(250);
+                // Unlock door
+                if (AllEnemiesKilled())
+                    maze.GetNode(maze.Height - 1, maze.Width - 1).BOTTOM = false;
             }
-            // Unlock door
-            if (AllEnemiesKilled())
-                maze.GetNode(maze.Height - 1, maze.Width - 1).BOTTOM = false;
-            // Saving after every iteration
-            XMLUtils.Save(this, Filename);
+            await Task.Delay(250);
         }
     }
 
     public async void Show()
     {
-        while (!GameOver)
+        while (State != GameState.Over && State != GameState.Quitting)
         {
-            Engine.Print(maze, enemies, player, $"Playing: {Filename}");
-            await Task.Delay(10);
+            string TextToPrint = State == GameState.Paused
+                                        ? $"Game Paused. \nPress escape to continue\nCNTRL+S to save and quit."
+                                        : $"Playing: {filename}";
+            Graphics.Print(maze, enemies, player, TextToPrint);
+            await Task.Delay(1000 / 60);
         }
     }
 
-    public void RunPlayer()
+    public void Run()
     {
         // Boucle principale
-        while (!GameOver)
+        while (State != GameState.Over && State != GameState.Quitting)
         {
             HandlePlayerInput();
         }
+
         // When game is over, it has to be handled
-        HandleEndOfGame();
+        if (State == GameState.Over)
+            HandleEndOfGame();
     }
 
 
@@ -90,45 +116,64 @@ public class Game
     // Existence questionable, has to be improved, may even be removed later
     private void HandleEndOfGame()
     {
-        string text = Winner() ? "You won!" : "You died!"; ;
-        Engine.Print(maze, enemies, player, text);
+        XMLUtils.Save(this, this.filename);
+        Graphics.Print(maze, enemies, player, Winner() ? "You won." : "You lost.");
+    }
+
+    public void SaveAndQuit()
+    {
+        XMLUtils.Save(this, filename); // Save the game
+        State = GameState.Quitting;
     }
 
     private void HandlePlayerInput()
     {
-        char input = Console.ReadKey().KeyChar;
-        bool CanMove = true;
-        switch (input)
+        // Read the input from the player
+        ConsoleKeyInfo input = Console.ReadKey();
+        // If the game is paused, we have these two scenarios
+        // Escape is pressed, then we unpause the game
+        // S is pressed, we save the game and quit
+        if (State == GameState.Paused)
         {
-            case 'w':
-            case 'W':
-                player.Orientation = Orientation.NORTH;
-                break;
-            case 'd':
-            case 'D':
-                player.Orientation = Orientation.EAST;
-                break;
-            case 's':
-            case 'S':
-                player.Orientation = Orientation.SOUTH;
-                break;
-            case 'a':
-            case 'A':
-                player.Orientation = Orientation.WEST;
-                break;
-            case 'P':
-            case 'p':
-                Shoot();
-                break;
-            default:
-                CanMove = false;
-                break;
+            if (input.Key == ConsoleKey.Escape)
+                State = GameState.Running;
+            else if (input.Key == ConsoleKey.S && input.Modifiers.HasFlag(ConsoleModifiers.Control))
+                SaveAndQuit();
+            return;
         }
 
-        if (!char.IsLower(input) && CanMove)
+        switch (input.Key)
+        {
+            case ConsoleKey.W:
+                player.Orientation = Orientation.NORTH;
+                break;
+            case ConsoleKey.D:
+                player.Orientation = Orientation.EAST;
+                break;
+            case ConsoleKey.S:
+                player.Orientation = Orientation.SOUTH;
+                break;
+            case ConsoleKey.A:
+                player.Orientation = Orientation.WEST;
+                break;
+            case ConsoleKey.P:
+                if (State == GameState.Running)
+                    Shoot();
+                break;
+            case ConsoleKey.Escape:
+                State = (State == GameState.Running) ? GameState.Paused : GameState.Running;
+                break;
+            default:
+                return;
+        }
+
+        //  Move if the typed character is upper case
+        //  otherwise just change orientation
+        if (char.IsUpper(input.KeyChar))
         {
             player.Move(maze.GetNode(player.X, player.Y));
         }
+
     }
 
 

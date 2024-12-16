@@ -1,6 +1,6 @@
-class Engine
+class Graphics
 {
-    private Engine() { }
+    private Graphics() { }
     static public void Print(Maze maze, Enemy[]? enemies, Player? player, string text)
     {
         Console.Clear();
@@ -77,5 +77,12 @@ class Engine
             Console.WriteLine($"| {i,-5} | {files[i].Name,-25} ");
         }
         Console.WriteLine("------------------------------------------------");
+    }
+
+    public static void PrintError(string message)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.Write(message);
+        Console.ForegroundColor = ConsoleColor.White;
     }
 }

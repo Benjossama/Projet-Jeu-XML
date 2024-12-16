@@ -5,7 +5,7 @@
   <xs:element name="Game">
     <xs:complexType>
       <xs:sequence>
-        <xs:element name="GameOver" type="xs:boolean" />
+        <xs:element name="State" type="StateType" />
         <xs:element name="Filename" type="xs:string" />
         <xs:element name="Player" type="PlayerType" />
         <xs:element name="Enemies" type="EnemiesType" />
@@ -26,7 +26,7 @@
   <!-- Enemies Type -->
   <xs:complexType name="EnemiesType">
     <xs:sequence>
-      <xs:element name="Enemy" type="EnemyType" maxOccurs="unbounded" />
+      <xs:element name="Enemy" type="EnemyType" minOccurs="1" maxOccurs="unbounded" />
     </xs:sequence>
   </xs:complexType>
 
@@ -74,5 +74,14 @@
       <xs:element name="BottomWall" type="xs:boolean" />
     </xs:sequence>
   </xs:complexType>
+
+  <!-- State Type -->
+ <xs:simpleType name="StateType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Over"/>
+      <xs:enumeration value="Paused"/>
+      <xs:enumeration value="Running"/>
+    </xs:restriction>
+  </xs:simpleType>
 
 </xs:schema>

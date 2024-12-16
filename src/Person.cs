@@ -33,7 +33,7 @@ abstract public class Person
         {
             if (value < 0)
             {
-                throw new ArgumentException("Value must be positive.");
+                throw new ArgumentOutOfRangeException("Value must be positive.");
             }
             _y = value;
         }
@@ -61,32 +61,31 @@ abstract public class Person
     }
 
 
-    public bool Move(Node playerLocation)
+    public bool Move(Node personLocation)
     {
         // Check if the current cell has a wall in the side facing the orientation of the person
-        if (Orientation == Orientation.NORTH && !playerLocation.TOP)
+        if (Orientation == Orientation.NORTH && !personLocation.TOP)
         {
             X = X - 1;
             return true;
 
         }
-        else if (Orientation == Orientation.EAST && !playerLocation.RIGHT)
+        else if (Orientation == Orientation.EAST && !personLocation.RIGHT)
         {
             Y = Y + 1;
             return true;
 
         }
-        else if (Orientation == Orientation.SOUTH && !playerLocation.BOTTOM)
+        else if (Orientation == Orientation.SOUTH && !personLocation.BOTTOM)
         {
             X = X + 1;
             return true;
 
         }
-        else if (Orientation == Orientation.WEST && !playerLocation.LEFT)
+        else if (Orientation == Orientation.WEST && !personLocation.LEFT)
         {
             Y = Y - 1;
             return true;
-
         }
         return false;
     }
