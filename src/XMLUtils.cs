@@ -26,7 +26,7 @@ class XMLUtils
 
         Console.WriteLine(filePath);
         // After every saving to html, save also to html
-        RunXSLT("data/xslt/convertXMLtoHTML.xslt", filePath, $"data/html/{Path.GetFileNameWithoutExtension(filePath)}.html");
+        RunXSLT("data/xslt/convertXMLtoHTML.xslt", "data/xsd/saved_game.xsd", filePath, $"data/html/{Path.GetFileNameWithoutExtension(filePath)}.html");
     }
 
     public static void Load(string filename)
@@ -48,27 +48,25 @@ class XMLUtils
 
     public static void Validate(string XSDFilePath, string XMLFile)
     {
-        // Load the schema
+        // Load
         XmlSchemaSet schemas = new XmlSchemaSet();
         schemas.Add(null, XSDFilePath);
 
-        // Configure the XmlReaderSettings
         XmlReaderSettings settings = new XmlReaderSettings
         {
             ValidationType = ValidationType.Schema,
             Schemas = schemas
         };
 
-        // Validation event handler to throw exceptions for any validation errors
         settings.ValidationEventHandler += (sender, e) =>
         {
-            throw new Exception($"Corrupt file: {e.Message}");
+            throw new Exception($"Corrupted file: {e.Message}");
         };
 
         // Validate the XML
         using (XmlReader reader = XmlReader.Create(XMLFile, settings))
         {
-            while (reader.Read()) { } // Reading ensures validation occurs
+            while (reader.Read()) { }
         }
     }
 
@@ -82,7 +80,7 @@ class XMLUtils
 
         // Gestion des espaces de noms
         XmlNamespaceManager nsManager = new XmlNamespaceManager(xmlDoc.NameTable);
-        nsManager.AddNamespace("game", "http://www.silentstrike.com");
+        nsManager.AddNamespace("game", "http://www.silentstrike.com/game");
 
         // Construire le contenu HTML
         StringBuilder htmlBuilder = new StringBuilder();
@@ -100,16 +98,16 @@ class XMLUtils
                                             <strong>Maze</strong>: {xmlFilePath}
                                         </p>");
 
-        // Récupération des données du joueur
+        // Recuperation des donnees du joueur
         XmlNode? playerNode = xmlDoc.SelectSingleNode("//game:player", nsManager);
         int playerX = int.Parse(playerNode?["game:X"]?.InnerText ?? "0");
         int playerY = int.Parse(playerNode?["game:Y"]?.InnerText ?? "0");
         Orientation playerOrientation = Enum.Parse<Orientation>(playerNode?["game:Orientation"]?.InnerText ?? "EAST");
 
-        // Récupération des ennemis
+        // Recuperation des ennemis
         XmlNodeList? enemyNodes = xmlDoc.SelectNodes("//game:Enemy", nsManager);
 
-        // Récupération des lignes de la grille
+        // Recuperation des lignes de la grille
         XmlNodeList? rows = xmlDoc.SelectNodes("//game:Row", nsManager);
 
         int rowIndex = 0;
@@ -130,7 +128,7 @@ class XMLUtils
                 if (node["game:LEFT"]?.InnerText == "true") htmlBuilder.Append(" wall-left");
                 htmlBuilder.AppendLine("\">");
 
-                // Vérifier si c'est la position du joueur
+                // Verifier si c'est la position du joueur
                 if (rowIndex == playerX && colIndex == playerY)
                 {
                     htmlBuilder.Append(@$"<p>
@@ -138,7 +136,7 @@ class XMLUtils
                                         </p>");
                 }
 
-                // Vérifier si c'est la position d'un ennemi
+                // Verifier si c'est la position d'un ennemi
                 foreach (XmlNode enemy in enemyNodes!)
                 {
                     int enemyX = int.Parse(enemy["game:X"]?.InnerText ?? "0");
@@ -167,13 +165,15 @@ class XMLUtils
         htmlBuilder.AppendLine("</body>");
         htmlBuilder.AppendLine("</html>");
 
-        // Écriture du HTML dans un fichier
         File.WriteAllText(outputHtmlPath, htmlBuilder.ToString());
     }
 
 
-    public static void RunXSLT(string xsltFilePath, string xmlFilePath, string outputHtmlPath)
+    public static void RunXSLT(string xsltFilePath, string xsdFilePath, string xmlFilePath, string outputHtmlPath)
     {
+        // First we check the file we are about to convert with xslt is correct
+        Validate(xsdFilePath, xmlFilePath);
+        // Apply transformation
         XslCompiledTransform xslt = new XslCompiledTransform();
         xslt.Load(xsltFilePath);
         xslt.Transform(xmlFilePath, outputHtmlPath);
@@ -223,7 +223,6 @@ class XMLUtils
             rootElement.AppendChild(fileElement);
         }
 
-        // Save the XML document to a file
         XmlWriterSettings settings = new XmlWriterSettings
         {
             Indent = true,

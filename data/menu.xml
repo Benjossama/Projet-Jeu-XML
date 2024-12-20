@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<menu:saved_games xmlns:menu="http://www.silentstrike.com/menu">
+  <menu:file>
+    <menu:name>test2.xml</menu:name>
+    <menu:path>html/test2.html</menu:path>
+    <menu:last_modified>20-12-2024 on 19:27</menu:last_modified>
+  </menu:file>
+  <menu:file>
+    <menu:name>testGame.xml</menu:name>
+    <menu:path>html/testGame.html</menu:path>
+    <menu:last_modified>20-12-2024 on 19:27</menu:last_modified>
+  </menu:file>
+</menu:saved_games>

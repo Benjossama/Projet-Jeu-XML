@@ -63,7 +63,7 @@ class Program
 
             // At the end update the menus
             XMLUtils.UpdateSavedGamesMenu("data/saved_games", "data/menu.xml");
-            XMLUtils.RunXSLT("data/xslt/convertMenuToHTML.xslt", "data/menu.xml", "data/menu.html");
+            XMLUtils.RunXSLT("data/xslt/convertMenuToHTML.xslt", "data/xsd/menu.xsd", "data/menu.xml", "data/menu.html");
 
         }
         catch (ArgumentException e)

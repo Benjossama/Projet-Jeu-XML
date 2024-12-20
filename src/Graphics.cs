@@ -54,7 +54,7 @@ class Graphics
         Console.WriteLine("+");
     }
 
-
+    // Returns number of index of the found enemy in the coordinates (x, y)
     static private int IsEnemyInNode(Enemy[] enemies, int x, int y)
     {
         for (int i = 0; i < enemies.Length; i++)

@@ -158,14 +158,19 @@ public class Maze
         }
     }
 
+    // Given two nodes A and B
+    // This retunrs true if on of them is accessible from the other
+    // meaning they are on the same vertical or horizontal line and there
+    // no wall between them
     public bool NoWallBetweenNodes(Node a, Node b)
     {
         if (a.X == b.X && a.Y == b.Y)
             return true;
 
+        // If they are on the same horizontal line
         else if (a.X == b.X)
             return IsPathClear(a.X, a.Y, b.Y, true);
-
+        // If they are on the same vertical line
         else if (a.Y == b.Y)
             return IsPathClear(a.Y, a.X, b.X, false);
 
@@ -173,20 +178,31 @@ public class Maze
             return false;
     }
 
+
+    // Checks if there is a clear path between the two nodes
     private bool IsPathClear(int fixedCoordinate, int first, int second, bool isVertical)
     {
         int min = Math.Min(first, second);
         int max = Math.Max(first, second);
-        bool ClearPath = true;
+        bool ClearPath = true; // By default, assume there is no wall
+
+        // Loop through the nodes between the two coordinates, depending on the direction (vertical or horizontal)
         for (int i = min; i <= max; i++)
         {
+            // If the direction is vertical, use the fixed coordinate (y-axis) and loop through positions on the x-axis.
+            // If the direction is horizontal, use the fixed coordinate (x-axis) and loop through positions on the y-axis.
             var node = isVertical ? GetNode(fixedCoordinate, i) : GetNode(i, fixedCoordinate);
 
+
+            // Check for walls on each node:
+            // - If we're at the start of the path (min), check if there is a wall to the right (horizontal) or bottom (vertical).
+            // - If we're at the end of the path (max), check if there is a wall to the left (horizontal) or top (vertical).
+            // - If we're between min and max, check for a left/right wall (horizontal) or top/bottom wall (vertical).
             if ((i == min && (isVertical ? node.RIGHT : node.BOTTOM)) ||
                 (i == max && (isVertical ? node.LEFT : node.TOP)) ||
                 (i > min && i < max &&
-                 ((isVertical ? node.LEFT || node.RIGHT
-                              : node.TOP || node.BOTTOM))))
+                 (isVertical ? node.LEFT || node.RIGHT
+                              : node.TOP || node.BOTTOM)))
             {
                 ClearPath = false;
             }

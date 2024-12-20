@@ -58,6 +58,8 @@ public class Game
         Run();
     }
 
+    // Update the game and moves the enemies.
+    // Checks that the game is not over.
     public async void Update()
     {
         while (State != GameState.Over && State != GameState.Quitting)
@@ -77,6 +79,7 @@ public class Game
         }
     }
 
+    // Calls the printing function while the game is not over 60 times per second (60 fps)
     public async void Show()
     {
         while (State != GameState.Over && State != GameState.Quitting)
@@ -89,9 +92,9 @@ public class Game
         }
     }
 
+    // Gets the input from the user whule the game is not over
     public void Run()
     {
-        // Boucle principale
         while (State != GameState.Over && State != GameState.Quitting)
         {
             HandlePlayerInput();
@@ -99,10 +102,13 @@ public class Game
 
         // When game is over, it has to be handled
         if (State == GameState.Over)
-            HandleEndOfGame();
+        {
+            XMLUtils.Save(this, this.filename);
+            Graphics.Print(maze, enemies, player, Winner() ? "You won." : "You lost.");
+        }
     }
 
-
+    // Loops through the enemies and call move on each one of them
     private void MoveEnemies()
     {
         foreach (var enemy in enemies)
@@ -111,13 +117,6 @@ public class Game
                 continue;
             enemy.Move(maze.GetNode(enemy.X, enemy.Y));
         }
-    }
-
-    // Existence questionable, has to be improved, may even be removed later
-    private void HandleEndOfGame()
-    {
-        XMLUtils.Save(this, this.filename);
-        Graphics.Print(maze, enemies, player, Winner() ? "You won." : "You lost.");
     }
 
     public void SaveAndQuit()
@@ -191,13 +190,13 @@ public class Game
 
     }
 
-
     private bool Winner()
     {
         bool isOutOfMaze = (player.X > maze.Height - 1) && (player.Y >= maze.Width - 1);
         return isOutOfMaze && AllEnemiesKilled();
     }
 
+    // Returns true if all enemies are dead
     private bool AllEnemiesKilled()
     {
         bool foundAliveEnemy = false;
@@ -213,7 +212,7 @@ public class Game
         return !foundAliveEnemy;
     }
 
-
+    // Returns true when the player is detected
     private bool PlayerDetected()
     {
         bool detected = false;
@@ -227,17 +226,24 @@ public class Game
                     ACorrectlyOrientedTowardsB(enemy, player) && // Enemy is facing the direction
                                                                  // on which the player is found
                     maze.NoWallBetweenNodes(playerNode, enemyNode) && // No wall between enemy and player
-                    enemy.Alive
+                    enemy.Alive // The enemy has to be alive for us to be detected
                 )
             {
                 detected = true;
             }
         }
 
-        return detected; // Aucun ennemi n'a détecté le joueur
+        return detected;
     }
 
+    // Si la personne A (player or enemy) regarde dans la direction ou se trouve la personne B
 
+    //                                                                          A      B
+    // Dans ce cas :  il est orienté dans la bonne direction pour voir l'autre: >      v
+
+
+    //                                                                                A      B
+    // Dans ce cas :  il n'est pas orienté dans la bonne direction pour voir l'autre: v      >
     private bool ACorrectlyOrientedTowardsB(Person A, Person B)
     {
         return A.Orientation switch
