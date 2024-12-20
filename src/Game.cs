@@ -143,7 +143,7 @@ public class Game
 
         switch (input.Key)
         {
-            case ConsoleKey.W:
+            case ConsoleKey.Z:
                 player.Orientation = Orientation.NORTH;
                 break;
             case ConsoleKey.D:
@@ -152,7 +152,7 @@ public class Game
             case ConsoleKey.S:
                 player.Orientation = Orientation.SOUTH;
                 break;
-            case ConsoleKey.A:
+            case ConsoleKey.Q:
                 player.Orientation = Orientation.WEST;
                 break;
             case ConsoleKey.P:
@@ -237,10 +237,8 @@ public class Game
     }
 
     // Si la personne A (player or enemy) regarde dans la direction ou se trouve la personne B
-
     //                                                                          A      B
     // Dans ce cas :  il est orienté dans la bonne direction pour voir l'autre: >      v
-
 
     //                                                                                A      B
     // Dans ce cas :  il n'est pas orienté dans la bonne direction pour voir l'autre: v      >
